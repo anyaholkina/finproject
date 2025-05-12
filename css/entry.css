@@ -1,0 +1,12 @@
+.modal-content {
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+.btn-close-custom {
+    padding: 10px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.btn-close-custom:hover {
+    opacity: 1;
+}
