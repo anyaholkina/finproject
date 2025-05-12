@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои финансы - Smart Money</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/finance.css" rel="stylesheet">
+    <link href="css/theme.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Шапка -->
+    <header class="bg-white shadow-sm py-2 mb-4">
+        <div class="container d-flex align-items-center justify-content-between">
+            <a href="index.html" class="d-flex align-items-center text-decoration-none">
+                <img src="images/logo — копия.png" alt="Логотип" style="height:48px;" class="me-2">
+            </a>
+            <div class="position-absolute start-50 translate-middle-x">
+                <h1 class="fw-bold mb-0 fs-2 text-center" id="mainTitle" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#financeModal">
+                    Мои финансы <i class="bi bi-chevron-down ms-2"></i>
+                </h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-link p-0 header-icon" data-bs-toggle="modal" data-bs-target="#notificationsModal"><i class="bi bi-bell fs-3"></i></button>
+                <button class="btn btn-link p-0 header-icon" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-list fs-2"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main class="container flex-grow-1">
+        <div class="row g-4 align-items-start">
+            <!-- Категории -->
+            <div class="col-md-4">
+                <div class="bg-white rounded-4 shadow-sm p-4 mb-3" style="height: 410px; min-height: 410px;">
+                    <div class="d-flex flex-column align-items-center justify-content-center mb-3 position-relative">
+                        <h2 class="fs-4 fw-bold mb-0 text-center w-100">Категории</h2>
+                        <button class="btn btn-light btn-sm rounded-circle position-absolute end-0 top-0" id="addCategoryBtn"><i class="bi bi-plus"></i></button>
+                    </div>
+                    <ul class="list-unstyled mb-4" id="categoriesList"></ul>
+                </div>
+                <div class="bg-white rounded-4 shadow-sm p-4 mb-3 d-none" id="familyMembersBlock">
+                    <div class="d-flex flex-column align-items-center justify-content-center mb-3 position-relative">
+                        <h2 class="fs-4 fw-bold mb-0 text-center w-100">Участники</h2>
+                        <button class="btn btn-light btn-sm rounded-circle position-absolute end-0 top-0" id="addMemberBtn"><i class="bi bi-plus"></i></button>
+                    </div>
+                    <ul class="list-unstyled mb-4" id="familyMembersList"></ul>
+                </div>
+                <button class="btn btn-success w-100 rounded-pill mt-3 mb-4">Скачать</button>
+            </div>
+            <!-- Диаграмма -->
+            <div class="col-md-4 text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 410px;">
+                <div class="w-100 d-flex flex-column justify-content-center align-items-center" style="height: 120px;">
+                    <h1 class="fw-bold fs-3 mb-2" id="mainTitleCenter" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#financeModal"></h1>
+                    <h2 class="fs-4 fw-bold mb-0">Бюджет</h2>
+                </div>
+                <div class="d-flex flex-column align-items-center justify-content-center mb-3" style="height: 260px;">
+                    <canvas id="budgetChart" style="max-width:260px;"></canvas>
+                </div>
+                <div class="d-flex justify-content-center mb-2" style="height: 40px;">
+                    <div class="btn-group rounded-pill shadow-sm overflow-hidden" role="group">
+                        <button type="button" class="btn btn-light chart-type-btn active" data-type="pie">Круговая</button>
+                        <button type="button" class="btn btn-light chart-type-btn" data-type="bar">Столбчатая</button>
+                    </div>
+                </div>
+            </div>
+            <!-- История -->
+            <div class="col-md-4">
+                <div class="bg-white rounded-4 shadow-sm p-4" style="min-height: 410px;">
+                    <div class="d-flex flex-column align-items-center justify-content-center mb-3 position-relative">
+                        <h2 class="fs-4 fw-bold mb-0 text-center w-100">История</h2>
+                        <button class="btn btn-light btn-sm rounded-circle position-absolute end-0 top-0" id="addOperationBtn"><i class="bi bi-plus"></i></button>
+                    </div>
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs justify-content-center mb-2" id="historyTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-type="expense" id="tab-expense" type="button">РАСХОДЫ</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-type="income" id="tab-income" type="button">ДОХОДЫ</button>
+                        </li>
+                    </ul>
+                    <!-- Period filters -->
+                    <ul class="nav nav-pills justify-content-center mb-2 flex-wrap gap-1" id="historyPeriods">
+                        <li class="nav-item"><button class="nav-link px-2 py-1 small" data-period="day">День</button></li>
+                        <li class="nav-item"><button class="nav-link px-2 py-1 small active" data-period="week">Неделя</button></li>
+                        <li class="nav-item"><button class="nav-link px-2 py-1 small" data-period="month">Месяц</button></li>
+                        <li class="nav-item"><button class="nav-link px-2 py-1 small" data-period="year">Год</button></li>
+                        <li class="nav-item"><button class="nav-link px-2 py-1 small" data-period="custom">Период</button></li>
+                    </ul>
+                    <!-- Period and sort -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <button class="btn btn-link p-0" id="periodPrev"><i class="bi bi-chevron-left"></i></button>
+                            <span id="periodLabel">22 июл - 28 июл</span>
+                            <button class="btn btn-link p-0" id="periodNext"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                        <div class="text-muted" style="cursor:pointer;" id="sortToggle">По дате <i class="bi bi-chevron-down"></i></div>
+                    </div>
+                    <div class="mb-2 fw-bold">Всего: <span id="historyTotal">7 030 ₽</span></div>
+                    <!-- List of operations -->
+                    <div class="history-list" id="historyList" style="max-height:260px;overflow-y:auto;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <footer class="footer pt-3 pb-1" style="background-color: #3f3e3e; border-top: 1px solid #555;">
+        <div class="container">
+            <div class="row align-items-center text-center text-md-start">
+                <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column align-items-center align-items-md-start">
+                    <img src="images/logo — копия.png" class="img-thumbnail mb-2" style="max-height:38px; background:transparent; border:none;" alt="Логотип">
+                    <div class="fw-bold text-white" style="font-size:17px;">Практиканты 2025</div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="d-flex align-items-center mb-2 gap-2 justify-content-center justify-content-md-start">
+                        <i class="bi bi-info-circle text-white"></i>
+                        <span class="fw-semibold text-white" style="font-size:16px;">О сервисе</span>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li><a href="#" class="footer-link">Ссылка</a></li>
+                        <li><a href="#" class="footer-link">Ссылка</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="d-flex align-items-center mb-2 gap-2 justify-content-center justify-content-md-start">
+                        <i class="bi bi-question-circle text-white"></i>
+                        <span class="fw-semibold text-white" style="font-size:16px;">Помощь</span>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li><a href="#" class="footer-link">FAQ</a></li>
+                        <li><a href="#" class="footer-link">Поддержка</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="d-flex align-items-center mb-2 gap-2 justify-content-center justify-content-md-start">
+                        <i class="bi bi-envelope text-white"></i>
+                        <span class="fw-semibold text-white" style="font-size:16px;">Контакты</span>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li><a href="#" class="footer-link">Email</a></li>
+                        <li><a href="#" class="footer-link">Телефон</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="text-center mt-3" style="color:#bbb; font-size:13px;">&copy; 2025 Smart Money. Все права защищены.</div>
+        </div>
+    </footer>
+
+    <!-- Модальное окно выбора группы -->
+    <div class="modal fade" id="financeModal" tabindex="-1" aria-labelledby="financeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financeModalLabel">Выберите группу</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="selectOption('Мои финансы')">Мои финансы</button>
+                    <button class="btn btn-primary w-100" onclick="selectOption('Семья')">Семья</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно профиля -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <p class="text-muted mb-1">mail@mail.com</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="d-grid gap-2 p-3">
+                    <button type="button" class="btn btn-outline-primary rounded-pill py-2">Профиль</button>
+                    <button type="button" class="btn btn-outline-primary rounded-pill py-2">Семья</button>
+                    <button type="button" class="btn btn-outline-primary rounded-pill py-2" id="settingsBtn">Настройки</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Добавить операцию -->
+    <div class="modal fade" id="addOperationModal" tabindex="-1" aria-labelledby="addOperationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3">
+          <div class="modal-header border-0 pb-0">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="addOperationModalLabel">Операции</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-0">
+            <ul class="nav nav-tabs justify-content-center mb-3 border-0">
+              <li class="nav-item"><a class="nav-link active" href="#">Расходы</a></li>
+              <li class="nav-item"><span class="nav-link disabled" style="color:#bbb;">Доходы</span></li>
+            </ul>
+            <form>
+              <div class="mb-3">
+                <select class="form-select form-control-lg" style="border-radius:14px;" aria-label="Категория">
+                  <option selected>Категория</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Сумма</label>
+                <div class="input-group">
+                  <input type="number" class="form-control form-control-lg" placeholder="Сумма" style="font-size:1.5rem; color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+                  <span class="input-group-text bg-white border-0" style="font-size:1.5rem;">₽</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Дата</label>
+                <input type="date" class="form-control form-control-lg" placeholder="Дата" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Комментарий</label>
+                <input type="text" class="form-control form-control-lg" placeholder="Комментарий" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <button type="submit" class="btn w-100 py-2" style="background:#A6E6B5; border-radius:16px; font-size:1.5rem;">Добавить</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка: Добавить категорию -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3">
+          <div class="modal-header border-0 pb-0">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="addCategoryModalLabel">Добавить</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-0">
+            <form>
+              <div class="mb-3">
+                <input type="text" class="form-control form-control-lg" placeholder="Категория" style="border-radius:14px;">
+              </div>
+              <div class="mb-3 d-flex align-items-center gap-3 justify-content-center">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="catType" id="catExpense" checked>
+                  <label class="form-check-label" for="catExpense">Расходы</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="catType" id="catIncome">
+                  <label class="form-check-label" for="catIncome">Доходы</label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Иконка</label>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:#CDECCB;font-size:2rem;">+</div>
+                    <div class="small">Еще</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Лимит</label>
+                <input type="number" class="form-control form-control-lg" placeholder="Лимит" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <button type="submit" class="btn w-100 py-2" style="background:#A6E6B5; border-radius:16px; font-size:1.5rem;">Добавить</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка: Редактировать категорию -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3">
+          <div class="modal-header border-0 pb-0">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="editCategoryModalLabel">Редактировать</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-0">
+            <form>
+              <div class="mb-3">
+                <input type="text" class="form-control form-control-lg" placeholder="Категория" style="border-radius:14px;">
+              </div>
+              <div class="mb-3 d-flex align-items-center gap-3 justify-content-center">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="editCatType" id="editCatExpense" checked>
+                  <label class="form-check-label" for="editCatExpense">Расходы</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="editCatType" id="editCatIncome">
+                  <label class="form-check-label" for="editCatIncome">Доходы</label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Иконка</label>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle" style="width:56px;height:56px;background:#CDECCB;display:flex;align-items:center;justify-content:center;font-size:2rem;"> </div>
+                    <div class="small">Название</div>
+                  </div>
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:#CDECCB;font-size:2rem;">+</div>
+                    <div class="small">Еще</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Лимит</label>
+                <input type="number" class="form-control form-control-lg" placeholder="Лимит" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-danger px-4" style="border-radius:14px;">Удалить</button>
+                <button type="submit" class="btn" style="background:#A6E6B5; border-radius:16px; font-size:1.2rem; min-width:120px;">Сохранить</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно уведомлений -->
+    <div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-3">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="notificationsModalLabel">Уведомления</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body d-flex align-items-center justify-content-center" style="min-height:120px;">
+                    <div class="w-100 text-center text-muted fs-4">здесь пока пусто</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Редактировать операцию -->
+    <div class="modal fade" id="editOperationModal" tabindex="-1" aria-labelledby="editOperationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3">
+          <div class="modal-header border-0 pb-0">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="editOperationModalLabel">Редактировать операцию</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-0">
+            <form>
+              <div class="mb-3">
+                <select class="form-select form-control-lg" style="border-radius:14px;" aria-label="Категория">
+                  <option selected>Категория</option>
+                </select>
+              </div>
+              <div class="mb-3 d-flex align-items-center gap-3 justify-content-center">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="editOpType" id="editOpExpense" checked>
+                  <label class="form-check-label" for="editOpExpense">Расходы</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="editOpType" id="editOpIncome">
+                  <label class="form-check-label" for="editOpIncome">Доходы</label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Сумма</label>
+                <div class="input-group">
+                  <input type="number" class="form-control form-control-lg" placeholder="Сумма" style="font-size:1.5rem; color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+                  <span class="input-group-text bg-white border-0" style="font-size:1.5rem;">₽</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Дата</label>
+                <input type="date" class="form-control form-control-lg" placeholder="Дата" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Комментарий</label>
+                <input type="text" class="form-control form-control-lg" placeholder="Комментарий" style="color:#bbb; border:none; border-bottom:1px solid #aaa; border-radius:0;">
+              </div>
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-danger px-4" style="border-radius:14px;">Удалить</button>
+                <button type="submit" class="btn" style="background:#A6E6B5; border-radius:16px; font-size:1.2rem; min-width:120px;">Сохранить</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка: Настройки -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-4" style="min-width:320px;">
+          <div class="modal-header border-0 pb-0 align-items-center justify-content-between">
+            <span class="fs-4 fw-normal" id="settingsEmail">Mail@mail.com</span>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-3 pb-0">
+            <div class="d-grid gap-3 mb-4">
+              <button class="d-flex align-items-center gap-2 px-4 py-3 rounded-4 border-0 w-100 theme-toggle-btn" style="background:#333;color:#fff;box-shadow:0 2px 8px #0001;font-size:1.3rem;">
+                <i class="bi bi-moon-stars-fill fs-3"></i> <span class="theme-text">Темная тема</span>
+              </button>
+              <button class="d-flex align-items-center gap-2 px-4 py-3 rounded-4 border-0 w-100 contact-btn" style="background:#e5e5e5;color:#222;box-shadow:0 2px 8px #0001;font-size:1.3rem;">
+                <i class="bi bi-chat-dots fs-3"></i> Связь
+              </button>
+            </div>
+            <div class="text-center mt-4">
+              <button class="btn border-0" style="color:#d00;font-size:1.2rem;">Выйти</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка: Связь -->
+    <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-4" style="min-width:320px;">
+          <div class="modal-header border-0 pb-0 align-items-center justify-content-between">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="contactModalLabel">Связь</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-3 pb-0">
+            <div class="mb-3 text-center">
+              <div class="mb-2">
+                <i class="bi bi-envelope fs-3 me-2"></i>
+                <span style="font-size:1.2rem;">vladfro2000@mail.ru</span>
+              </div>
+              <div>
+                <i class="bi bi-telephone fs-3 me-2"></i>
+                <span style="font-size:1.2rem;">+7 932 413-15-59</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка: Профиль -->
+    <div class="modal fade" id="profileInfoModal" tabindex="-1" aria-labelledby="profileInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-4" style="min-width:320px;">
+                <div class="modal-header border-0 pb-0 align-items-center justify-content-between">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="profileInfoModalLabel">Профиль</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3 pb-0">
+                    <!-- Аватар и основная информация -->
+                    <div class="text-center mb-4">
+                        <div class="rounded-circle bg-light mx-auto mb-3" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:3rem;">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <h3 class="fs-4 fw-bold mb-1">Иван Иванов</h3>
+                        <div class="text-muted mb-3">mail@mail.com</div>
+                    </div>
+
+                    <!-- Форма редактирования -->
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            <input type="text" class="form-control form-control-lg" value="Иван Иванов" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control form-control-lg" value="mail@mail.com" style="border-radius:14px;">
+                        </div>
+
+                        <!-- Кнопки действий -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn" style="background:#A6E6B5; border-radius:16px; font-size:1.2rem;">Сохранить изменения</button>
+                            <button type="button" class="btn btn-outline-danger rounded-pill px-4 py-2">Выйти</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Изменение пароля -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-4">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="changePasswordModalLabel">Изменить пароль</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Текущий пароль</label>
+                            <input type="password" class="form-control form-control-lg" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" class="form-control form-control-lg" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Подтвердите новый пароль</label>
+                            <input type="password" class="form-control form-control-lg" style="border-radius:14px;">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn" style="background:#A6E6B5; border-radius:16px; font-size:1.2rem;">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Семья -->
+    <div class="modal fade" id="familyModal" tabindex="-1" aria-labelledby="familyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-4" style="min-width:320px;">
+          <div class="modal-header border-0 pb-0 align-items-center justify-content-between">
+            <h2 class="modal-title w-100 text-center fw-bold fs-2" id="familyModalLabel">Семья</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-3 pb-0">
+            <ul class="list-unstyled mb-4">
+              <li class="d-flex align-items-center mb-3">
+                <span class="badge me-2" style="background:#6C7BFF;width:14px;height:14px;">&nbsp;</span>
+                Анна
+                <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button>
+              </li>
+              <li class="d-flex align-items-center mb-3">
+                <span class="badge me-2" style="background:#FF7EB3;width:14px;height:14px;">&nbsp;</span>
+                Иван
+                <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button>
+              </li>
+              <li class="d-flex align-items-center mb-3">
+                <span class="badge me-2" style="background:#FFD600;width:14px;height:14px;">&nbsp;</span>
+                Олег
+                <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button>
+              </li>
+              <li class="d-flex align-items-center mb-3">
+                <span class="badge me-2" style="background:#4CB1FF;width:14px;height:14px;">&nbsp;</span>
+                Маша
+                <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button>
+              </li>
+            </ul>
+            <div class="text-center">
+              <button class="btn btn-success rounded-pill px-4 py-2">Добавить участника</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно добавления участника -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-3">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="addMemberModalLabel">Добавить участника</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control form-control-lg" placeholder="Имя" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control form-control-lg" placeholder="Email" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Цвет</label>
+                            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#6C7BFF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FF7EB3;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FFD600;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#4CB1FF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn w-100 py-2" style="background:#A6E6B5; border-radius:16px; font-size:1.5rem;">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования участника -->
+    <div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-3">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="editMemberModalLabel">Редактировать участника</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control form-control-lg" placeholder="Имя" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control form-control-lg" placeholder="Email" style="border-radius:14px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Цвет</label>
+                            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#6C7BFF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FF7EB3;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FFD600;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="rounded-circle" style="width:56px;height:56px;background:#4CB1FF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-danger px-4" style="border-radius:14px;">Удалить</button>
+                            <button type="submit" class="btn" style="background:#A6E6B5; border-radius:16px; font-size:1.2rem; min-width:120px;">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainTitle = document.getElementById('mainTitle');
+            let currentGroup = 'my'; // 'my' или 'family'
+            function updateMainTitle() {
+                mainTitle.innerHTML = (currentGroup === 'my' ? 'Мои финансы' : 'Семья') + ' <i class="bi bi-chevron-down ms-2"></i>';
+            }
+
+            // Примерные данные для двух групп
+            const dataSets = {
+                my: {
+                    categories: [
+                        {name: 'Транспорт', color: '#6C7BFF'},
+                        {name: 'Еда', color: '#FF7EB3'},
+                        {name: 'Развлечения', color: '#A259FF'}
+                    ],
+                    chart: {
+                        labels: ['Транспорт', 'Еда', 'Развлечения'],
+                        data: [500000, 150000, 350000],
+                        colors: ['#6C7BFF', '#FF7EB3', '#A259FF']
+                    },
+                    history: {
+                        expense: {
+                            week: [
+                                {date: '2020-07-22', items: [
+                                    {cat: 'Продукты', icon: 'basket2-fill', color: '#3DC1C7', sum: 850},
+                                    {cat: 'Транспорт', icon: 'bus-front-fill', color: '#4CB1FF', sum: 150}
+                                ]},
+                                {date: '2020-07-23', items: [
+                                    {cat: 'Кафе', icon: 'cup-hot-fill', color: '#FFD600', sum: 650}
+                                ]},
+                                {date: '2020-07-25', items: [
+                                    {cat: 'Продукты', icon: 'basket2-fill', color: '#3DC1C7', sum: 800, sub: 'Овощи на рынке'},
+                                    {cat: 'Шоппинг', icon: 'bag-fill', color: '#A259FF', sum: 4080, sub: ''}
+                                ]},
+                                {date: '2020-07-26', items: [
+                                    {cat: 'Транспорт', icon: 'bus-front-fill', color: '#4CB1FF', sum: 500}
+                                ]}
+                            ],
+                            day: [], month: [], year: [], custom: []
+                        },
+                        income: {
+                            week: [
+                                {date: '2020-07-22', items: [
+                                    {cat: 'Зарплата', icon: 'cash-stack', color: '#4CB1FF', sum: 5000}
+                                ]},
+                                {date: '2020-07-25', items: [
+                                    {cat: 'Подарок', icon: 'gift-fill', color: '#FFD600', sum: 2030}
+                                ]}
+                            ],
+                            day: [], month: [], year: [], custom: []
+                        }
+                    }
+                },
+                family: {
+                    categories: [
+                        {name: 'Общий транспорт', color: '#FFB347'},
+                        {name: 'Семейные продукты', color: '#4CB1FF'},
+                        {name: 'Досуг', color: '#7ED957'},
+                        {name: 'Дети', color: '#FF7EB3'}
+                    ],
+                    chart: {
+                        labels: ['Общий транспорт', 'Семейные продукты', 'Досуг', 'Дети'],
+                        data: [200000, 400000, 250000, 150000],
+                        colors: ['#FFB347', '#4CB1FF', '#7ED957', '#FF7EB3']
+                    },
+                    history: {
+                        expense: {
+                            week: [
+                                {date: '2020-07-22', items: [
+                                    {cat: 'Семейные продукты', icon: 'basket2-fill', color: '#4CB1FF', sum: 1200, sub: 'Магазин Metro'},
+                                    {cat: 'Общий транспорт', icon: 'bus-front-fill', color: '#FFB347', sum: 300}
+                                ]},
+                                {date: '2020-07-23', items: [
+                                    {cat: 'Досуг', icon: 'balloon-fill', color: '#7ED957', sum: 2000, sub: 'Кинотеатр'}
+                                ]},
+                                {date: '2020-07-25', items: [
+                                    {cat: 'Дети', icon: 'emoji-smile-fill', color: '#FF7EB3', sum: 500, sub: 'Игрушки'}
+                                ]}
+                            ],
+                            day: [], month: [], year: [], custom: []
+                        },
+                        income: {
+                            week: [
+                                {date: '2020-07-22', items: [
+                                    {cat: 'Общий доход', icon: 'cash-stack', color: '#4CB1FF', sum: 10000}
+                                ]},
+                                {date: '2020-07-25', items: [
+                                    {cat: 'Подарок семье', icon: 'gift-fill', color: '#FFD600', sum: 3000}
+                                ]}
+                            ],
+                            day: [], month: [], year: [], custom: []
+                        }
+                    }
+                }
+            };
+
+            // --- Категории ---
+            function renderCategories() {
+                const catBlock = document.getElementById('categoriesList');
+                catBlock.innerHTML = '';
+                dataSets[currentGroup].categories.forEach(cat => {
+                    catBlock.innerHTML += `<li class="d-flex align-items-center mb-3"><span class="badge me-2" style="background:${cat.color};width:14px;height:14px;">&nbsp;</span>${cat.name} <button class="btn btn-link btn-sm ms-auto edit-category-btn"><i class="bi bi-pencil"></i></button></li>`;
+                });
+            }
+
+            // --- Диаграмма ---
+            let budgetChart;
+            function renderChart(type = 'pie') {
+                const chartData = dataSets[currentGroup].chart;
+                const ctx = document.getElementById('budgetChart').getContext('2d');
+                if (budgetChart) budgetChart.destroy();
+                budgetChart = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            data: chartData.data,
+                            backgroundColor: chartData.colors,
+                            borderColor: chartData.colors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) label += ': ';
+                                        label += context.raw.toLocaleString('ru-RU') + ' ₽';
+                                        return label;
+                                    }
+                                }
+                            },
+                            datalabels: type === 'pie' ? {
+                                color: '#fff',
+                                font: { weight: 'bold', size: 14 },
+                                formatter: function(value, context) {
+                                    const dataArr = context.chart.data.datasets[0].data;
+                                    const sum = dataArr.reduce((a, b) => a + b, 0);
+                                    const percent = sum ? Math.round(value / sum * 100) : 0;
+                                    return percent + '%';
+                                }
+                            } : {
+                                display: false
+                            }
+                        },
+                        scales: type === 'bar' ? {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('ru-RU') + ' ₽';
+                                    }
+                                }
+                            }
+                        } : {}
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            }
+
+            // --- История ---
+            let currentType = 'expense';
+            let currentPeriod = 'week';
+            let sortDesc = true;
+            function renderHistory(type, period, sortDesc = true) {
+                const list = document.getElementById('historyList');
+                list.innerHTML = '';
+                const data = dataSets[currentGroup].history[type][period] || [];
+                let total = 0;
+                let sorted = [...data];
+                if (!sortDesc) sorted.reverse();
+                sorted.forEach(day => {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'text-muted small mb-1';
+                    dateDiv.textContent = formatDate(day.date);
+                    list.appendChild(dateDiv);
+                    day.items.forEach(item => {
+                        total += item.sum;
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center mb-2';
+                        row.innerHTML = `
+                            <span class="me-2 d-flex align-items-center justify-content-center" style="color:${item.color};width:32px;height:32px;"><i class="bi bi-${item.icon} fs-5"></i></span>
+                            <div class="flex-grow-1">
+                                <div>${item.cat}</div>
+                                ${item.sub ? `<div class='small text-muted'>${item.sub}</div>` : ''}
+                            </div>
+                            <div class="ms-auto fw-bold">${type==='income'?'+':'-'}${item.sum.toLocaleString('ru-RU')} ₽</div>
+                            <button class="btn btn-link btn-sm ms-2 edit-operation-btn"><i class="bi bi-pencil"></i></button>
+                        `;
+                        list.appendChild(row);
+                    });
+                });
+                document.getElementById('historyTotal').textContent = `${total.toLocaleString('ru-RU')} ₽`;
+            }
+
+            // --- Перерисовка всех блоков ---
+            function renderFamilyMembers() {
+                const block = document.getElementById('familyMembersBlock');
+                const list = document.getElementById('familyMembersList');
+                if (currentGroup === 'family') {
+                    block.classList.remove('d-none');
+                    // Примерные участники
+                    const members = [
+                        {name: 'Анна', color: '#6C7BFF'},
+                        {name: 'Иван', color: '#FF7EB3'},
+                        {name: 'Олег', color: '#FFD600'},
+                        {name: 'Маша', color: '#4CB1FF'}
+                    ];
+                    list.innerHTML = '';
+                    members.forEach(m => {
+                        list.innerHTML += `<li class="d-flex align-items-center mb-3"><span class="badge me-2" style="background:${m.color};width:14px;height:14px;">&nbsp;</span>${m.name} <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button></li>`;
+                    });
+
+                    // Добавляем обработчики для кнопок редактирования
+                    document.querySelectorAll('.edit-member-btn').forEach(btn => {
+                        btn.onclick = function(e) {
+                            e.preventDefault();
+                            const modal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                            modal.show();
+                        };
+                    });
+                } else {
+                    block.classList.add('d-none');
+                }
+            }
+            function rerenderAll() {
+                updateMainTitle();
+                renderCategories();
+                renderFamilyMembers();
+                renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                renderHistory(currentType, currentPeriod, sortDesc);
+            }
+
+            // --- Смена группы ---
+            window.selectOption = function(option) {
+                currentGroup = (option === 'Семья') ? 'family' : 'my';
+                rerenderAll();
+                var modal = bootstrap.Modal.getInstance(document.getElementById('financeModal'));
+                modal.hide();
+            }
+
+            // --- События для диаграммы ---
+            document.querySelectorAll('.chart-type-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.chart-type-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    renderChart(this.dataset.type);
+                });
+            });
+
+            // --- События для истории ---
+            document.getElementById('tab-expense').onclick = function() {
+                currentType = 'expense';
+                this.classList.add('active');
+                document.getElementById('tab-income').classList.remove('active');
+                renderHistory(currentType, currentPeriod, sortDesc);
+            };
+            document.getElementById('tab-income').onclick = function() {
+                currentType = 'income';
+                this.classList.add('active');
+                document.getElementById('tab-expense').classList.remove('active');
+                renderHistory(currentType, currentPeriod, sortDesc);
+            };
+            document.querySelectorAll('#historyPeriods .nav-link').forEach(btn => {
+                btn.onclick = function() {
+                    document.querySelectorAll('#historyPeriods .nav-link').forEach(b=>b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPeriod = this.getAttribute('data-period');
+                    renderHistory(currentType, currentPeriod, sortDesc);
+                }
+            });
+            document.getElementById('sortToggle').onclick = function() {
+                sortDesc = !sortDesc;
+                this.innerHTML = `По дате <i class="bi bi-chevron-${sortDesc?'down':'up'}"></i>`;
+                renderHistory(currentType, currentPeriod, sortDesc);
+            };
+            document.getElementById('periodPrev').onclick = function() {
+                alert('Смена периода влево (реализуйте по необходимости)');
+            };
+            document.getElementById('periodNext').onclick = function() {
+                alert('Смена периода вправо (реализуйте по необходимости)');
+            };
+
+            // --- Форматирование дат (оставляем как было) ---
+            function formatDate(dateStr) {
+                const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+                const d = new Date(dateStr);
+                return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+            }
+
+            // --- Инициализация ---
+            rerenderAll();
+
+            // Открытие модалок по кнопкам (навешиваем один раз для +)
+            document.getElementById('addOperationBtn')?.addEventListener('click', function() {
+              const modal = new bootstrap.Modal(document.getElementById('addOperationModal'));
+              modal.show();
+            });
+            document.getElementById('addCategoryBtn')?.addEventListener('click', function() {
+              const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+              modal.show();
+            });
+
+            // Функция для навешивания обработчиков на карандашики после каждого рендера категорий
+            function bindEditCategoryBtns() {
+              document.querySelectorAll('.edit-category-btn').forEach(btn => {
+                btn.onclick = function(e) {
+                  e.preventDefault();
+                  const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+                  modal.show();
+                };
+              });
+            }
+            // Навешиваем после первого рендера
+            bindEditCategoryBtns();
+            // Переопределяем renderCategories чтобы всегда навешивать обработчики
+            const origRenderCategories = renderCategories;
+            renderCategories = function() {
+              origRenderCategories();
+              bindEditCategoryBtns();
+            }
+
+            // --- Переключение расходов/доходов в модалке операции ---
+            function setupOperationTypeTabs() {
+              const modal = document.getElementById('addOperationModal');
+              if (!modal) return;
+              const tabs = modal.querySelectorAll('.nav-link');
+              tabs.forEach(tab => {
+                tab.onclick = function(e) {
+                  e.preventDefault();
+                  tabs.forEach(t => t.classList.remove('active'));
+                  this.classList.add('active');
+                  // Здесь можно добавить смену типа операции (например, менять placeholder, валюту и т.д.)
+                };
+              });
+            }
+            setupOperationTypeTabs();
+
+            // --- Открытие модалки уведомлений по колокольчику ---
+            document.querySelectorAll('.bi-bell').forEach(bell => {
+              bell.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('notificationsModal'));
+                modal.show();
+              });
+            });
+
+            // --- Открытие модалки редактирования операции по карандашу в истории ---
+            function bindEditOperationBtns() {
+              document.querySelectorAll('.edit-operation-btn').forEach(btn => {
+                btn.onclick = function(e) {
+                  e.preventDefault();
+                  const modal = new bootstrap.Modal(document.getElementById('editOperationModal'));
+                  modal.show();
+                };
+              });
+            }
+            bindEditOperationBtns();
+            // Переопределяем renderHistory чтобы всегда навешивать обработчики
+            const origRenderHistory = renderHistory;
+            renderHistory = function(type, period, sortDesc = true) {
+              origRenderHistory(type, period, sortDesc);
+              bindEditOperationBtns();
+            }
+
+            document.getElementById('settingsBtn')?.addEventListener('click', function() {
+              const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+              modal.show();
+              // Закрыть профильное меню
+              const profileModal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
+              if(profileModal) profileModal.hide();
+            });
+
+            document.querySelectorAll('.btn-outline-primary').forEach(btn => {
+              if(btn.textContent.trim() === 'Профиль') {
+                btn.addEventListener('click', function() {
+                  const modal = new bootstrap.Modal(document.getElementById('profileInfoModal'));
+                  modal.show();
+                  const profileModal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
+                  if(profileModal) profileModal.hide();
+                });
+              }
+              if(btn.textContent.trim() === 'Семья') {
+                btn.addEventListener('click', function() {
+                  const modal = new bootstrap.Modal(document.getElementById('familyModal'));
+                  modal.show();
+                  const profileModal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
+                  if(profileModal) profileModal.hide();
+                });
+              }
+            });
+
+            // Добавляем обработчик для модального окна уведомлений
+            const notificationsModal = document.getElementById('notificationsModal');
+            notificationsModal.addEventListener('hidden.bs.modal', function () {
+                // Удаляем затемнение принудительно
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                // Удаляем класс modal-open с body
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+
+            // Добавим обработчик для кнопки добавления участника
+            document.getElementById('addMemberBtn')?.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+                modal.show();
+            });
+
+            // Также добавим обработчик для кнопки "Добавить участника" в модальном окне семьи
+            document.querySelector('#familyModal .btn-success')?.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+                modal.show();
+                // Закрываем модальное окно семьи
+                const familyModal = bootstrap.Modal.getInstance(document.getElementById('familyModal'));
+                if(familyModal) familyModal.hide();
+            });
+
+            // Добавляем обработчики для кнопок редактирования в модальном окне семьи
+            document.querySelectorAll('#familyModal .edit-member-btn').forEach(btn => {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    const modal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                    modal.show();
+                    // Закрываем модальное окно семьи
+                    const familyModal = bootstrap.Modal.getInstance(document.getElementById('familyModal'));
+                    if(familyModal) familyModal.hide();
+                };
+            });
+
+            // Инициализация темы
+            const savedTheme = localStorage.getItem('financeTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeButton(savedTheme);
+
+            // Обработчик переключения темы
+            document.querySelector('.theme-toggle-btn')?.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('financeTheme', newTheme);
+                updateThemeButton(newTheme);
+            });
+
+            // Обработчик для кнопки "Связь"
+            document.querySelector('.contact-btn')?.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('contactModal'));
+                modal.show();
+            });
+        });
+
+        // Функция обновления кнопки темы
+        function updateThemeButton(theme) {
+            const themeBtn = document.querySelector('.theme-toggle-btn');
+            const themeText = themeBtn.querySelector('.theme-text');
+            if (theme === 'dark') {
+                themeBtn.innerHTML = '<i class="bi bi-sun-fill fs-3"></i> <span class="theme-text">Светлая тема</span>';
+                themeBtn.style.background = '#e5e5e5';
+                themeBtn.style.color = '#222';
+            } else {
+                themeBtn.innerHTML = '<i class="bi bi-moon-stars-fill fs-3"></i> <span class="theme-text">Темная тема</span>';
+                themeBtn.style.background = '#333';
+                themeBtn.style.color = '#fff';
+            }
+        }
+    </script>
+</body>
+</html>

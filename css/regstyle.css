@@ -1,0 +1,28 @@
+.bg-cover {
+    background: url('../images/background.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
+
+.registration-form {
+    backdrop-filter: blur(2px);
+    background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.form-control, .btn {
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    border-color: #86b7fe;
+}
+
+@media (max-width: 400px) {
+    .registration-form {
+        padding: 1.5rem !important;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+} 
