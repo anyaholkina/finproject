@@ -11,7 +11,7 @@ class ExpenseController extends Controller
     
     public function index(Request $request)
     {
-        $query = Expense::where('user_id', auth()->id());
+        $query = Expense::forUserOrGroup(auth()->user());
 
         if ($request->has('category_id')) {
             $query->where('category_id', $request->category_id);
