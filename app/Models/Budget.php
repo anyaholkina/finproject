@@ -20,4 +20,20 @@ class Budget extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    public function scopeForUserOrGroup($query, $user)
+    {
+        return $query->where('user_id', $user->id)
+                     ->orWhere('group_id', $user->group_id);
+    }
 }

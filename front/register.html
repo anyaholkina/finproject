@@ -12,36 +12,91 @@
         <div class="registration-form bg-white rounded-3 shadow p-4 p-md-5 w-100" style="max-width: 500px">
             <h1 class="text-center mb-4 fw-bold">Регистрация</h1>
             
-            <form onsubmit="return false;">
+            <form onsubmit="registerUser(event)">
                 <div class="mb-3">
                     <label for="email" class="form-label fw-medium">Email</label>
-                    <input type="email" class="form-control py-2" id="email" placeholder="Введите ваш email">
+                    <input type="email" class="form-control py-2" id="email" placeholder="Введите ваш email" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="password" class="form-label fw-medium">Пароль</label>
-                    <input type="password" class="form-control py-2" id="password" placeholder="Введите пароль">
+                    <input type="password" class="form-control py-2" id="password" placeholder="Введите пароль" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="confirm-password" class="form-label fw-medium">Подтвердите пароль</label>
-                    <input type="password" class="form-control py-2" id="confirm-password" placeholder="Повторите пароль">
+                    <input type="password" class="form-control py-2" id="confirm-password" placeholder="Повторите пароль" required>
                 </div>
                 
-                <div class="d-flex justify-content-between mb-4">
-                    <a href="#" class="text-muted text-decoration-none small">Забыли пароль?</a>
+                <div class="mb-4 text-center">
                     <a href="index.html" class="text-muted text-decoration-none small">Вернуться на главную</a>
                 </div>
                 
                 <hr class="my-4">
                 
-                <button type="button" class="btn btn-primary w-100 py-2 fw-medium" onclick="location.href='finance.html';">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-medium">
                     Зарегистрироваться
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- Toast-уведомление -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
+      <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            Регистрация успешна!
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/bootstrap.min.js"></script>
+    <script>
+    function registerUser(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm-password').value;
+
+        if (password !== confirm) {
+            alert('Пароли не совпадают!');
+            return;
+        }
+
+        fetch('/api/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                name: email,
+                email: email,
+                password: password,
+                password_confirmation: confirm
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.user || data.success) {
+                var toast = new bootstrap.Toast(document.getElementById('successToast'));
+                toast.show();
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            } else if (data.errors) {
+                let msg = '';
+                for (const key in data.errors) {
+                    msg += data.errors[key].join(' ') + '\n';
+                }
+                alert('Ошибка: ' + msg);
+            } else {
+                alert('Ошибка регистрации');
+            }
+        })
+        .catch(() => alert('Ошибка соединения с сервером'));
+    }
+    </script>
 </body>
 </html>

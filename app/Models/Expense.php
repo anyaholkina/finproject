@@ -26,4 +26,10 @@ class Expense extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function scopeForUserOrGroup($query, $user)
+    {
+        return $query->where('user_id', $user->id)
+                     ->orWhereHas('user', fn($q) => $q->where('group_id', $user->group_id));
+    }
 }
