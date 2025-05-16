@@ -117,7 +117,6 @@ function loadCategories() {
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${category.id})">
-                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 `;

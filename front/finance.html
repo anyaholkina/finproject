@@ -136,6 +136,13 @@
       max-width: 0;
       opacity: 0;
     }
+    .edit-operation-btn {
+      position: relative;
+      pointer-events: auto;
+    }
+    .edit-operation-btn i {
+      pointer-events: none;
+    }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -726,16 +733,16 @@
                             <label class="form-label">Цвет</label>
                             <div class="d-flex gap-3 justify-content-center flex-wrap">
                                 <div class="d-flex flex-column align-items-center">
-                                    <div class="rounded-circle" style="width:56px;height:56px;background:#6C7BFF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                    <div class="rounded-circle color-choice selected" style="width:56px;height:56px;background:#6C7BFF;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;"></div>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
-                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FF7EB3;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                    <div class="rounded-circle color-choice" style="width:56px;height:56px;background:#FF7EB3;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;"></div>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
-                                    <div class="rounded-circle" style="width:56px;height:56px;background:#FFD600;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                    <div class="rounded-circle color-choice" style="width:56px;height:56px;background:#FFD600;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;"></div>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
-                                    <div class="rounded-circle" style="width:56px;height:56px;background:#4CB1FF;display:flex;align-items:center;justify-content:center;font-size:2rem;"></div>
+                                    <div class="rounded-circle color-choice" style="width:56px;height:56px;background:#4CB1FF;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;"></div>
                                 </div>
                             </div>
                         </div>
@@ -839,16 +846,14 @@
                     }
                 },
                 family: {
+                    members: [], // Новый массив участников
                     categories: [],
                     chart: {
                         labels: [],
                         data: [],
                         colors: []
                     },
-                    history: {
-                        expense: { week: [], day: [], month: [], year: [], custom: [] },
-                        income: { week: [], day: [], month: [], year: [], custom: [] }
-                    }
+                    history: { expense: { week: [], day: [], month: [], year: [], custom: [] }, income: { week: [], day: [], month: [], year: [], custom: [] } }
                 }
             };
 
@@ -1010,12 +1015,12 @@
                 let total = 0;
                 let sorted = [...data];
                 if (!sortDesc) sorted.reverse();
-                sorted.forEach(day => {
+                sorted.forEach((day, dayIdx) => {
                     const dateDiv = document.createElement('div');
                     dateDiv.className = 'text-muted small mb-1';
                     dateDiv.textContent = formatDate(day.date);
                     list.appendChild(dateDiv);
-                    day.items.forEach(item => {
+                    day.items.forEach((item, itemIdx) => {
                         total += item.sum;
                         const row = document.createElement('div');
                         row.className = 'd-flex align-items-center mb-2';
@@ -1026,8 +1031,12 @@
                                 ${item.sub ? `<div class='small text-muted'>${item.sub}</div>` : ''}
                             </div>
                             <div class="ms-auto fw-bold">${type==='income'?'+':'-'}${item.sum.toLocaleString('ru-RU')} ₽</div>
-                            <button class="btn btn-link btn-sm ms-2 edit-operation-btn"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-link btn-sm ms-2 edit-operation-btn" data-day-idx="${dayIdx}" data-item-idx="${itemIdx}"><i class="bi bi-pencil"></i></button>
                         `;
+                        // Диагностика:
+                        row.onclick = function(e) {
+                          console.log('ROW CLICK', e.target);
+                        };
                         list.appendChild(row);
                     });
                 });
@@ -1042,24 +1051,40 @@
                 const list = document.getElementById('familyMembersList');
                 if (currentGroup === 'family') {
                     block.classList.remove('d-none');
-                    
-                    const members = [
-                        {name: 'Анна', color: '#6C7BFF'},
-                        {name: 'Иван', color: '#FF7EB3'},
-                        {name: 'Олег', color: '#FFD600'},
-                        {name: 'Маша', color: '#4CB1FF'}
-                    ];
                     list.innerHTML = '';
-                    members.forEach(m => {
-                        list.innerHTML += `<li class="d-flex align-items-center mb-3"><span class="badge me-2" style="background:${m.color};width:14px;height:14px;">&nbsp;</span>${m.name} <button class="btn btn-link btn-sm ms-auto edit-member-btn"><i class="bi bi-pencil"></i></button></li>`;
+                    (dataSets.family.members || []).forEach((m, idx) => {
+                        list.innerHTML += `<li class="d-flex align-items-center mb-3"><span class="badge me-2" style="background:${m.color};width:14px;height:14px;">&nbsp;</span>${m.name} <button class="btn btn-link btn-sm ms-auto edit-member-btn" data-idx="${idx}"><i class="bi bi-pencil"></i></button></li>`;
                     });
-
-                    
+                    // Кнопки редактирования
                     document.querySelectorAll('.edit-member-btn').forEach(btn => {
                         btn.onclick = function(e) {
                             e.preventDefault();
+                            const idx = +btn.getAttribute('data-idx');
                             const modal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                            // Заполнить форму
+                            const form = document.querySelector('#editMemberModal form');
+                            form.querySelector('input[type="text"]').value = dataSets.family.members[idx].name;
+                            form.querySelector('input[type="email"]').value = dataSets.family.members[idx].email || '';
+                            // Цвет
+                            const color = dataSets.family.members[idx].color;
+                            form.querySelectorAll('.rounded-circle').forEach(el => {
+                                if (el.style.background === color) el.classList.add('selected');
+                                else el.classList.remove('selected');
+                            });
+                            form.setAttribute('data-edit-idx', idx);
                             modal.show();
+                        };
+                    });
+                    // Кнопки удаления
+                    document.querySelectorAll('.remove-member-btn').forEach(btn => {
+                        btn.onclick = function(e) {
+                            e.preventDefault();
+                            const idx = +btn.getAttribute('data-idx');
+                            if (confirm('Удалить участника?')) {
+                                dataSets.family.members.splice(idx, 1);
+                                saveFamilyMembersToStorage();
+                                renderFamilyMembers();
+                            }
                         };
                     });
                 } else {
@@ -1146,49 +1171,36 @@
 
             
             function bindEditCategoryBtns() {
-              console.log('Binding edit category buttons...');
+              console.log('bindEditCategoryBtns called, currentGroup:', currentGroup);
               document.querySelectorAll('.edit-category-btn').forEach((btn, idx) => {
                 console.log(`Found edit button ${idx}`);
                 btn.onclick = function(e) {
                   console.log('Edit button clicked');
                   e.preventDefault();
                   e.stopPropagation();
-                  
-                  console.log('Checking Bootstrap...');
                   if (typeof bootstrap === 'undefined') {
                     console.error('Bootstrap не инициализирован');
                     return;
                   }
-
-                  console.log('Looking for modal element...');
                   const modalElement = document.getElementById('editCategoryModal');
                   if (!modalElement) {
                     console.error('Модальное окно редактирования не найдено');
                     return;
                   }
-
-                  console.log('Creating modal instance...');
                   const modal = new bootstrap.Modal(modalElement);
-                  
-                  console.log('Finding category...');
                   const cat = dataSets[currentGroup].categories[idx];
                   if (!cat) {
                     console.error('Категория не найдена');
                     return;
                   }
-
-                  console.log('Filling form...');
                   const form = modalElement.querySelector('form');
                   if (!form) {
                     console.error('Форма не найдена в модальном окне');
                     return;
                   }
-
                   form.querySelector('input[type="text"]').value = cat.name;
                   form.querySelector('input[name="editCatType"][id="editCatExpense"]').checked = cat.type === 'expense';
                   form.querySelector('input[name="editCatType"][id="editCatIncome"]').checked = cat.type === 'income';
-
-                  console.log('Rendering icons...');
                   const iconBlock = form.querySelector('.mb-3 label.form-label + .d-flex');
                   if (iconBlock) {
                     iconBlock.innerHTML = icons.map((ic, i) => `
@@ -1199,7 +1211,6 @@
                         <div class="small">${ic.label}</div>
                       </div>
                     `).join('');
-
                     iconBlock.querySelectorAll('.icon-choice').forEach(el => {
                       el.onclick = function() {
                         iconBlock.querySelectorAll('.icon-choice').forEach(e=>e.classList.remove('selected'));
@@ -1207,17 +1218,11 @@
                       };
                     });
                   }
-
-                  console.log('Setting limit...');
                   const limitInput = form.querySelector('input[type="number"]');
                   if (limitInput) {
                     limitInput.value = cat.limit || '';
                   }
-
-                  console.log('Setting edit index...');
                   form.setAttribute('data-edit-idx', idx);
-                  
-                  console.log('Showing modal...');
                   modal.show();
                 };
               });
@@ -1257,20 +1262,74 @@
 
             
             function bindEditOperationBtns() {
-              document.querySelectorAll('.edit-operation-btn').forEach(btn => {
+              console.log('bindEditOperationBtns called, currentGroup:', currentGroup);
+              document.querySelectorAll('.edit-operation-btn').forEach((btn) => {
                 btn.onclick = function(e) {
                   e.preventDefault();
+                  const dayIdx = +btn.getAttribute('data-day-idx');
+                  const itemIdx = +btn.getAttribute('data-item-idx');
+                  const foundDay = dataSets[currentGroup].history[currentType][currentPeriod][dayIdx];
+                  if (!foundDay) return;
+                  const foundItem = foundDay.items[itemIdx];
+                  if (!foundItem) return;
+                  // Открыть модалку и заполнить поля
                   const modal = new bootstrap.Modal(document.getElementById('editOperationModal'));
+                  const form = document.querySelector('#editOperationModal form');
+                  // Категория
+                  const select = form.querySelector('select');
+                  select.innerHTML = '<option selected>Категория</option>' +
+                    dataSets[currentGroup].categories.filter(c => c.type === currentType).map(cat =>
+                      `<option value="${cat.name}"${cat.name===foundItem.cat?' selected':''}>${cat.name}</option>`
+                    ).join('');
+                  // Тип
+                  form.querySelector('input#editOpExpense').checked = currentType === 'expense';
+                  form.querySelector('input#editOpIncome').checked = currentType === 'income';
+                  // Сумма
+                  form.querySelector('input[type="number"]').value = foundItem.sum;
+                  // Дата
+                  form.querySelector('input[type="date"]').value = foundDay.date;
+                  // Комментарий
+                  form.querySelector('input[type="text"]').value = foundItem.sub || '';
+                  // --- Новый блок: участник ---
+                  let memberSelect = form.querySelector('select[name="member"]');
+                  if (!memberSelect) {
+                    memberSelect = document.createElement('select');
+                    memberSelect.className = 'form-select form-control-lg mb-3';
+                    memberSelect.name = 'member';
+                    select.parentElement.parentElement.insertBefore(memberSelect, select.parentElement);
+                  }
+                  if (currentGroup === 'family') {
+                    memberSelect.innerHTML = '<option value="">Участник</option>' +
+                      (dataSets.family.members || []).map((m, idx) => `<option value="${idx}"${foundItem.member===m.name?' selected':''}>${m.name}</option>`).join('');
+                    memberSelect.style.display = '';
+                  } else {
+                    memberSelect.innerHTML = '';
+                    memberSelect.style.display = 'none';
+                  }
+                  // Сохраняем индексы для сохранения
+                  form.setAttribute('data-edit-day-idx', dayIdx);
+                  form.setAttribute('data-edit-item-idx', itemIdx);
                   modal.show();
                 };
               });
             }
             bindEditOperationBtns();
             
-            if (!origRenderHistory) origRenderHistory = renderHistory;
+            // Объявить origRenderHistoryFn один раз в самом верху (до всех функций)
+            let origRenderHistoryFn;
+            // Далее оставить только присваивание внутри условия
+            if (!origRenderHistory) {
+              origRenderHistory = renderHistory;
+              origRenderHistoryFn = origRenderHistory;
+              origRenderHistory = function(type, period, sortDesc = true) {
+                console.log('origRenderHistory called, currentGroup:', currentGroup, 'type:', type, 'period:', period);
+                origRenderHistoryFn(type, period, sortDesc);
+              }
+            }
             renderHistory = function(type, period, sortDesc = true) {
-                origRenderHistory(type, period, sortDesc);
-                bindEditOperationBtns();
+              console.log('renderHistory called, currentGroup:', currentGroup, 'type:', type, 'period:', period);
+              origRenderHistory(type, period, sortDesc);
+              setTimeout(bindEditOperationBtns, 0);
             }
 
             
@@ -1487,6 +1546,10 @@
                         el.onclick = function() {
                             iconBlock.querySelectorAll('.icon-choice').forEach(e=>e.classList.remove('selected'));
                             this.classList.add('selected');
+                            const label = this.parentElement.querySelector('.small')?.textContent;
+                            if (label) {
+                                document.querySelector('#addCategoryModal input[type="text"]').value = label;
+                            }
                         };
                     });
                 }
@@ -1579,10 +1642,37 @@
             (function() {
                 const form = document.querySelector('#addOperationModal form');
                 if (!form) return;
+                let memberSelect = form.querySelector('select[name="member"]');
+                if (!memberSelect) {
+                    memberSelect = document.createElement('select');
+                    memberSelect.className = 'form-select form-control-lg mb-3';
+                    memberSelect.name = 'member';
+                    memberSelect.innerHTML = '<option value="">Участник</option>';
+                    form.prepend(memberSelect);
+                }
+                // При открытии модалки — обновлять список участников и категорий
+                document.getElementById('addOperationModal').addEventListener('show.bs.modal', function() {
+                    // Участники
+                    if (currentGroup === 'family') {
+                        memberSelect.innerHTML = '<option value="">Участник</option>' +
+                            (dataSets.family.members || []).map((m, idx) => `<option value="${idx}">${m.name}</option>`).join('');
+                        memberSelect.style.display = '';
+                    } else {
+                        memberSelect.innerHTML = '';
+                        memberSelect.style.display = 'none';
+                    }
+                    // Категории — всегда актуальны для текущей группы и типа
+                    const select = form.querySelector('select:not([name="member"])');
+                    select.innerHTML = '<option selected>Категория</option>' +
+                        (dataSets[currentGroup].categories || [])
+                            .filter(c => c.type === currentType)
+                            .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
+                            .join('');
+                });
+                // Изменяем обработчик submit
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    
-                    const catSelect = form.querySelector('select');
+                    const catSelect = form.querySelector('select:not([name="member"])');
                     const catName = catSelect.value;
                     if (!catName || catName === 'Категория') return;
                     const sumInput = form.querySelector('input[type="number"]');
@@ -1592,44 +1682,41 @@
                     const date = dateInput.value || (new Date()).toISOString().slice(0,10);
                     const commentInput = form.querySelector('input[type="text"]');
                     const comment = commentInput.value.trim();
-                    
                     const cat = dataSets[currentGroup].categories.find(c => c.name === catName);
                     if (!cat) return;
-                    
                     let periodArr = dataSets[currentGroup].history[currentType][currentPeriod];
-                    
                     let day = periodArr.find(d => d.date === date);
                     if (!day) {
                         day = { date, items: [] };
                         periodArr.push(day);
                     }
-                   
-                    day.items.push({
+                    // --- Главное отличие: участник не обязателен ---
+                    let memberIdx = memberSelect && memberSelect.value !== '' ? +memberSelect.value : null;
+                    let member = null;
+                    if (currentGroup === 'family' && memberIdx !== null && dataSets.family.members[memberIdx]) {
+                        member = dataSets.family.members[memberIdx];
+                    }
+                    const newItem = {
                         cat: cat.name,
                         icon: cat.icon,
                         color: cat.color,
                         sum: sum,
                         sub: comment
-                    });
-                   
+                    };
+                    if (member) {
+                        newItem.member = member.name;
+                        newItem.memberColor = member.color;
+                    }
+                    day.items.push(newItem);
                     checkBudgetLimit(cat.name);
-                    
                     updateChartData();
                     renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
                     renderHistory(currentType, currentPeriod, true);
                     saveHistoryToStorage();
-                    
+                    if (typeof updateFamilyBudgetUI === 'function') updateFamilyBudgetUI();
                     bootstrap.Modal.getInstance(document.getElementById('addOperationModal')).hide();
                     form.reset();
-                });
-                
-                document.getElementById('addOperationModal').addEventListener('show.bs.modal', function() {
-                    const select = form.querySelector('select');
-                    select.innerHTML = '<option selected>Категория</option>' +
-                        dataSets[currentGroup].categories.filter(c => c.type === currentType).map(cat =>
-                            `<option value="${cat.name}">${cat.name}</option>`
-                        ).join('');
-                });
+                }, true);
             })();
 
             
@@ -1924,7 +2011,470 @@
                     modal.hide();
                 }
             });
-        });
-    </script>
+
+            // 1. Функции для работы с участниками семьи
+            function loadFamilyMembersFromStorage() {
+                const saved = localStorage.getItem('family_members');
+                if (saved) {
+                    try { dataSets.family.members = JSON.parse(saved); } catch(e) {}
+                }
+            }
+            function saveFamilyMembersToStorage() {
+                localStorage.setItem('family_members', JSON.stringify(dataSets.family.members));
+            }
+
+            // 2. Добавление участника
+            const addMemberForm = document.querySelector('#addMemberModal form');
+            // Добавим обработчик для выбора цвета
+            if (addMemberForm) {
+              addMemberForm.addEventListener('click', function(e) {
+                const colorCircle = e.target.closest('.rounded-circle');
+                // Проверяем, что клик был по цвету именно в этой модалке
+                if (colorCircle && colorCircle.parentElement.parentElement.parentElement === addMemberForm) {
+                  addMemberForm.querySelectorAll('.rounded-circle').forEach(el => el.classList.remove('selected'));
+                  colorCircle.classList.add('selected');
+                }
+              });
+            }
+            addMemberForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = this.querySelector('input[type="text"]').value.trim();
+                const email = this.querySelector('input[type="email"]').value.trim();
+                const selectedColor = this.querySelector('.color-choice.selected').style.background;
+                
+                if (!name) return;
+                
+                dataSets.family.members.push({ name, email, color: selectedColor });
+                saveFamilyMembersToStorage();
+                renderFamilyMembers();
+                
+                bootstrap.Modal.getInstance(document.getElementById('addMemberModal')).hide();
+                this.reset();
+            });
+
+            // 3. Редактирование участника
+            const editMemberForm = document.querySelector('#editMemberModal form');
+            if (editMemberForm) {
+              // Сделать выбор цвета кликабельным
+              editMemberForm.addEventListener('click', function(e) {
+                const colorCircle = e.target.closest('.rounded-circle');
+                if (colorCircle && colorCircle.parentElement.parentElement.parentElement === editMemberForm) {
+                  editMemberForm.querySelectorAll('.rounded-circle').forEach(el => el.classList.remove('selected'));
+                  colorCircle.classList.add('selected');
+                }
+              });
+              
+              document.getElementById('editMemberModal').addEventListener('show.bs.modal', function() {
+                const idx = +editMemberForm.getAttribute('data-edit-idx');
+                const color = dataSets.family.members[idx]?.color;
+                editMemberForm.querySelectorAll('.rounded-circle').forEach(el => {
+                  if (el.style.background === color) el.classList.add('selected');
+                  else el.classList.remove('selected');
+                });
+              });
+              
+              editMemberForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const idx = +this.getAttribute('data-edit-idx');
+                const name = this.querySelector('input[type="text"]').value.trim();
+                const email = this.querySelector('input[type="email"]').value.trim();
+                let color = '#6C7BFF';
+                this.querySelectorAll('.rounded-circle').forEach(el => {
+                  if (el.classList.contains('selected')) color = el.style.background;
+                });
+                if (!name || isNaN(idx)) return;
+                dataSets.family.members[idx] = { name, email, color };
+                saveFamilyMembersToStorage();
+                renderFamilyMembers();
+                bootstrap.Modal.getInstance(document.getElementById('editMemberModal')).hide();
+              });
+              
+              editMemberForm.querySelector('.btn-danger')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                const idx = +editMemberForm.getAttribute('data-edit-idx');
+                if (isNaN(idx)) return;
+                dataSets.family.members.splice(idx, 1);
+                saveFamilyMembersToStorage();
+                renderFamilyMembers();
+                bootstrap.Modal.getInstance(document.getElementById('editMemberModal')).hide();
+              });
+            }
+
+            
+            loadFamilyMembersFromStorage();
+            renderFamilyMembers();
+
+           
+            function updateFamilyBudgetUI() {
+                if (currentGroup !== 'family') return;
+                const input = document.getElementById('familyBudgetInput');
+                if (input) input.value = dataSets.family.budget || 0;
+                // Прогресс
+                let spent = 0;
+                (dataSets.family.history['expense']['month'] || []).forEach(day => {
+                    (day.items || []).forEach(item => { spent += item.sum; });
+                });
+                const progress = document.getElementById('familyBudgetProgress');
+                if (progress) {
+                    if (dataSets.family.budget > 0) {
+                        const percent = Math.min(100, (spent / dataSets.family.budget * 100).toFixed(1));
+                        progress.innerHTML = `<span class='badge bg-${percent>90?'danger':percent>70?'warning':'success'}'>${spent.toLocaleString('ru-RU')} / ${dataSets.family.budget.toLocaleString('ru-RU')} ₽ (${percent}%)</span>`;
+                    } else {
+                        progress.innerHTML = '';
+                    }
+                }
+            }
+
+            
+
+           
+            updateFamilyBudgetUI();
+
+           
+            (function() {
+                const form = document.querySelector('#addOperationModal form');
+                if (!form) return;
+               
+                let memberSelect = form.querySelector('select[name="member"]');
+                if (!memberSelect) {
+                    memberSelect = document.createElement('select');
+                    memberSelect.className = 'form-select form-control-lg mb-3';
+                    memberSelect.name = 'member';
+                    memberSelect.innerHTML = '<option value="">Участник</option>';
+                    form.prepend(memberSelect);
+                }
+                
+                document.getElementById('addOperationModal').addEventListener('show.bs.modal', function() {
+                    if (currentGroup === 'family') {
+                        memberSelect.innerHTML = '<option value="">Участник</option>' +
+                            (dataSets.family.members || []).map((m, idx) => `<option value="${idx}">${m.name}</option>`).join('');
+                        memberSelect.style.display = '';
+                    } else {
+                        memberSelect.innerHTML = '';
+                        memberSelect.style.display = 'none';
+                    }
+                });
+                
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const catSelect = form.querySelector('select:not([name="member"])');
+                    const catName = catSelect.value;
+                    if (!catName || catName === 'Категория') return;
+                    const sumInput = form.querySelector('input[type="number"]');
+                    const sum = parseFloat(sumInput.value);
+                    if (!sum || sum <= 0) return;
+                    const dateInput = form.querySelector('input[type="date"]');
+                    const date = dateInput.value || (new Date()).toISOString().slice(0,10);
+                    const commentInput = form.querySelector('input[type="text"]');
+                    const comment = commentInput.value.trim();
+                    const cat = dataSets[currentGroup].categories.find(c => c.name === catName);
+                    if (!cat) return;
+                    let periodArr = dataSets[currentGroup].history[currentType][currentPeriod];
+                    let day = periodArr.find(d => d.date === date);
+                    if (!day) {
+                        day = { date, items: [] };
+                        periodArr.push(day);
+                    }
+                    
+                    let memberIdx = memberSelect && memberSelect.value !== '' ? +memberSelect.value : null;
+                    let member = null;
+                    if (currentGroup === 'family' && memberIdx !== null && dataSets.family.members[memberIdx]) {
+                        member = dataSets.family.members[memberIdx];
+                    }
+                    const newItem = {
+                        cat: cat.name,
+                        icon: cat.icon,
+                        color: cat.color,
+                        sum: sum,
+                        sub: comment
+                    };
+                    if (member) {
+                        newItem.member = member.name;
+                        newItem.memberColor = member.color;
+                    }
+                    day.items.push(newItem);
+                    checkBudgetLimit(cat.name);
+                    updateChartData();
+                    renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                    renderHistory(currentType, currentPeriod, true);
+                    saveHistoryToStorage();
+                    if (typeof updateFamilyBudgetUI === 'function') updateFamilyBudgetUI();
+                    bootstrap.Modal.getInstance(document.getElementById('addOperationModal')).hide();
+                    form.reset();
+                }, true);
+            })();
+
+            renderHistory = function(type, period, sortDesc = true) {
+                origRenderHistoryFn(type, period, sortDesc);
+                
+                if (currentGroup === 'family') {
+                    const list = document.getElementById('historyList');
+                    list.querySelectorAll('.d-flex.align-items-center.mb-2').forEach((row, idx) => {
+                        const dayIdx = Array.from(list.children).filter(el => el.className.includes('text-muted')).length - 1;
+                        
+                        let item;
+                        (dataSets.family.history[currentType][currentPeriod] || []).forEach(day => {
+                            day.items.forEach(it => {
+                                if (!item && row.innerHTML.includes(it.cat) && row.innerHTML.includes(it.sum.toLocaleString('ru-RU'))) item = it;
+                            });
+                        });
+                        if (item && item.member) {
+                            const memberDiv = document.createElement('div');
+                            memberDiv.className = 'small text-muted';
+                            memberDiv.innerHTML = `<span class='badge' style='background:${item.memberColor};color:#fff;'>${item.member}</span>`;
+                            row.querySelector('.flex-grow-1').appendChild(memberDiv);
+                        }
+                    });
+                }
+                setTimeout(bindEditOperationBtns, 0);
+            };
+
+          
+            const origRenderChartFn = renderChart;
+            renderChart = function(type = 'pie') {
+                if (currentGroup === 'family' && type === 'pie') {
+                    // Суммируем траты по участникам
+                    const members = dataSets.family.members || [];
+                    const labels = [];
+                    const data = [];
+                    const colors = [];
+                    members.forEach(m => {
+                        let sum = 0;
+                        (dataSets.family.history['expense'][currentPeriod] || []).forEach(day => {
+                            (day.items || []).forEach(item => {
+                                if (item.member === m.name) sum += item.sum;
+                            });
+                        });
+                        if (sum > 0) {
+                            labels.push(m.name);
+                            data.push(sum);
+                            colors.push(m.color);
+                        }
+                    });
+                    dataSets.family.chart.labels = labels;
+                    dataSets.family.chart.data = data;
+                    dataSets.family.chart.colors = colors;
+                }
+                origRenderChartFn(type);
+                updateFamilyBudgetUI();
+            };
+
+            
+            updateFamilyBudgetUI();
+
+            document.getElementById('addMemberBtn')?.addEventListener('click', function() {
+              const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+              modal.show();
+             
+              const familyModal = bootstrap.Modal.getInstance(document.getElementById('familyModal'));
+              if(familyModal) familyModal.hide();
+            });
+
+            
+            const addCategoryForm = document.querySelector('#addCategoryModal form');
+            if (addCategoryForm) {
+              addCategoryForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = this.querySelector('input[type="text"]').value.trim();
+                if (!name) return;
+                const type = this.querySelector('input[name="catType"]:checked').id === 'catExpense' ? 'expense' : 'income';
+                let iconEl = this.querySelector('.icon-choice.selected');
+                let icon = iconEl ? iconEl.getAttribute('data-icon') : 'star-fill';
+                let color = iconEl ? iconEl.getAttribute('data-color') : '#FF6B6B';
+                dataSets[currentGroup].categories.push({ name, icon, color, type });
+                saveCategoriesToStorage();
+                renderCategories();
+                if (typeof bindEditCategoryBtns === 'function') bindEditCategoryBtns();
+                updateChartData();
+                renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+                this.reset();
+              });
+            }
+            
+            const addOperationForm = document.querySelector('#addOperationModal form');
+            if (addOperationForm) {
+              addOperationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const catSelect = this.querySelector('select:not([name="member"])');
+                const catName = catSelect.value;
+                if (!catName || catName === 'Категория') return;
+                const sumInput = this.querySelector('input[type="number"]');
+                const sum = parseFloat(sumInput.value);
+                if (!sum || sum <= 0) return;
+                const dateInput = this.querySelector('input[type="date"]');
+                const date = dateInput.value || (new Date()).toISOString().slice(0,10);
+                const commentInput = this.querySelector('input[type="text"]');
+                const comment = commentInput.value.trim();
+                const cat = dataSets[currentGroup].categories.find(c => c.name === catName);
+                if (!cat) return;
+                let periodArr = dataSets[currentGroup].history[currentType][currentPeriod];
+                let day = periodArr.find(d => d.date === date);
+                if (!day) {
+                  day = { date, items: [] };
+                  periodArr.push(day);
+                }
+                let memberSelect = this.querySelector('select[name="member"]');
+                let memberIdx = memberSelect && memberSelect.value !== '' ? +memberSelect.value : null;
+                let member = null;
+                if (currentGroup === 'family' && memberIdx !== null && dataSets.family.members[memberIdx]) {
+                  member = dataSets.family.members[memberIdx];
+                }
+                const newItem = {
+                  cat: cat.name,
+                  icon: cat.icon,
+                  color: cat.color,
+                  sum: sum,
+                  sub: comment
+                };
+                if (member) {
+                  newItem.member = member.name;
+                  newItem.memberColor = member.color;
+                }
+                day.items.push(newItem);
+                checkBudgetLimit(cat.name);
+                updateChartData();
+                renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                renderHistory(currentType, currentPeriod, true);
+                if (typeof bindEditOperationBtns === 'function') bindEditOperationBtns();
+                saveHistoryToStorage();
+                bootstrap.Modal.getInstance(document.getElementById('addOperationModal')).hide();
+                this.reset();
+              });
+            }
+
+            document.getElementById('editCategoryModal').addEventListener('show.bs.modal', function() {
+                const form = this.querySelector('form');
+                const idx = +form.getAttribute('data-edit-idx');
+                const cat = dataSets[currentGroup].categories[idx];
+                if (!cat) return;
+                
+                const iconBlock = form.querySelector('.mb-3 label.form-label + .d-flex');
+                if (iconBlock) {
+                    iconBlock.innerHTML = icons.map((ic, i) => `
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="rounded-circle icon-choice${cat.icon===ic.icon?' selected':''}" data-icon="${ic.icon}" data-color="${ic.color}" style="width:56px;height:56px;background:${ic.color};display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;">
+                                <i class="bi bi-${ic.icon}"></i>
+                            </div>
+                            <div class="small">${ic.label}</div>
+                        </div>
+                    `).join('');
+                    
+                    iconBlock.querySelectorAll('.icon-choice').forEach(el => {
+                        el.onclick = function() {
+                            iconBlock.querySelectorAll('.icon-choice').forEach(e=>e.classList.remove('selected'));
+                            this.classList.add('selected');
+                            const label = this.parentElement.querySelector('.small')?.textContent;
+                            if (label) {
+                                form.querySelector('input[type="text"]').value = label;
+                            }
+                        };
+                    });
+                }
+            });
+
+           
+            document.querySelectorAll('#addMemberModal .color-choice').forEach(circle => {
+                circle.addEventListener('click', function() {
+                    // Убираем выделение со всех кругов
+                    document.querySelectorAll('#addMemberModal .color-choice').forEach(c => c.classList.remove('selected'));
+                    // Добавляем выделение на выбранный круг
+                    this.classList.add('selected');
+                });
+            });
+            
+            
+            document.querySelector('#addMemberModal form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = this.querySelector('input[type="text"]').value.trim();
+                const email = this.querySelector('input[type="email"]').value.trim();
+                const selectedColor = this.querySelector('.color-choice.selected').style.background;
+                
+                if (!name) return;
+                
+                dataSets.family.members.push({ name, email, color: selectedColor });
+                saveFamilyMembersToStorage();
+                renderFamilyMembers();
+                
+                bootstrap.Modal.getInstance(document.getElementById('addMemberModal')).hide();
+                this.reset();
+            });
+
+           
+        
+            document.getElementById('editOperationModal').addEventListener('click', function(e) {
+              if (e.target.closest('.btn-danger')) {
+                const form = this.querySelector('form');
+                if (!form) return;
+                e.preventDefault();
+                const oldDayIdx = +form.getAttribute('data-edit-day-idx');
+                const oldItemIdx = +form.getAttribute('data-edit-item-idx');
+                const periodArr = dataSets[currentGroup].history[currentType][currentPeriod];
+                const oldDay = periodArr[oldDayIdx];
+                if (oldDay && oldDay.items[oldItemIdx]) {
+                  oldDay.items.splice(oldItemIdx, 1);
+                  if (oldDay.items.length === 0) {
+                    periodArr.splice(oldDayIdx, 1);
+                  }
+                  saveHistoryToStorage();
+                  renderHistory(currentType, currentPeriod, true);
+                  updateChartData();
+                  renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                }
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editOperationModal'));
+                if (modal) modal.hide();
+              }
+            });
+
+            document.getElementById('editOperationModal').addEventListener('submit', function(e) {
+              if (e.target.tagName === 'FORM') {
+                e.preventDefault();
+                const form = e.target;
+                const select = form.querySelector('select:not([name="member"])'); // исправлено!
+                const catName = select.value;
+                const sum = parseFloat(form.querySelector('input[type="number"]').value);
+                const date = form.querySelector('input[type="date"]').value;
+                const comment = form.querySelector('input[type="text"]').value.trim();
+                if (!catName || catName === 'Категория' || !sum || sum <= 0 || !date) return;
+                const cat = dataSets[currentGroup].categories.find(c => c.name === catName);
+                if (!cat) return;
+                const oldDayIdx = +form.getAttribute('data-edit-day-idx');
+                const oldItemIdx = +form.getAttribute('data-edit-item-idx');
+                const oldDay = dataSets[currentGroup].history[currentType][currentPeriod][oldDayIdx];
+                if (oldDay) oldDay.items.splice(oldItemIdx, 1);
+                let periodArr = dataSets[currentGroup].history[currentType][currentPeriod];
+                let day = periodArr.find(d => d.date === date);
+                if (!day) {
+                  day = { date, items: [] };
+                  periodArr.push(day);
+                }
+                let memberSelect = form.querySelector('select[name="member"]');
+                let memberIdx = memberSelect && memberSelect.value !== '' ? +memberSelect.value : null;
+                let member = null;
+                if (currentGroup === 'family' && memberIdx !== null && dataSets.family.members[memberIdx]) {
+                  member = dataSets.family.members[memberIdx];
+                }
+                const newItem = {
+                  cat: cat.name,
+                  icon: cat.icon,
+                  color: cat.color,
+                  sum: sum,
+                  sub: comment
+                };
+                if (member) {
+                  newItem.member = member.name;
+                  newItem.memberColor = member.color;
+                }
+                day.items.push(newItem);
+                saveHistoryToStorage();
+                renderHistory(currentType, currentPeriod, true);
+                updateChartData();
+                renderChart(document.querySelector('.chart-type-btn.active').dataset.type);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editOperationModal'));
+                if (modal) modal.hide();
+              }
+            });    
+});
+</script>
 </body>
 </html>
