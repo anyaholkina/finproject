@@ -789,9 +789,31 @@
         </div>
     </div>
 
+    <!-- Модалка: Экспорт данных -->
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-4" style="min-width:320px;">
+                <div class="modal-header border-0 pb-0 align-items-center justify-content-between">
+                    <h2 class="modal-title w-100 text-center fw-bold fs-2" id="exportModalLabel">Экспорт данных</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3 pb-0 d-flex flex-column gap-3">
+                    <button id="exportPdfBtn" class="btn btn-outline-primary w-100 py-3" style="font-size:1.2rem;">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Экспорт в PDF
+                    </button>
+                    <button id="exportExcelBtn" class="btn btn-outline-success w-100 py-3" style="font-size:1.2rem;">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Экспорт в Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/fonts/Roboto/Roboto-normal.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const mainTitle = document.getElementById('mainTitle');
@@ -855,7 +877,10 @@
                     catBlock.innerHTML += `<li class="d-flex align-items-center mb-3">
                       <span class="badge me-2" style="background:${cat.color};width:16px;height:16px;">&nbsp;</span>
                       <i class="bi bi-${cat.icon} me-2 cat-icon" data-idx="${i}" style="color:${cat.color};font-size:1.2rem;cursor:pointer;"></i>
-                      <span class="cat-name expanded" style="display:inline-block;max-width:200px;opacity:1;overflow:hidden;white-space:nowrap;transition:max-width 0.3s,opacity 0.3s;">${cat.name}</span>
+                      <span class="cat-name expanded" style="display:inline-block;max-width:200px;opacity:1;overflow:hidden;white-space:nowrap;transition:max-width 0.3s,opacity 0.3s;">
+                        ${cat.name}
+                        ${cat.limit ? `<span class='d-block text-muted small' style='font-size:0.95em;'>Лимит: ${Number(cat.limit).toLocaleString('ru-RU')} rub</span>` : ''}
+                      </span>
                       <button class="btn btn-link btn-sm ms-auto edit-category-btn"><i class="bi bi-pencil"></i></button>
                     </li>`;
                 });
@@ -928,7 +953,7 @@
                                     if (isEmpty) return '';
                                     const dataArr = context.chart.data.datasets[0].data;
                                     const sum = dataArr.reduce((a, b) => a + b, 0);
-                                    const percent = sum ? Math.round(value / sum * 100) : 0;
+                                    const percent = sum ? (value / sum * 100).toFixed(1) : 0;
                                     return percent + '%';
                                 }
                             } : {
@@ -1686,72 +1711,130 @@
               };
             })();
 
+            // Открытие модалки экспорта по кнопке "Скачать"
             document.getElementById('downloadChartBtn').addEventListener('click', function() {
-                const chartBlock = document.getElementById('budgetChart').parentElement;
+                const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+                modal.show();
+            });
 
-                
-                const tempHeader = document.createElement('div');
-                tempHeader.style.textAlign = 'center';
-                tempHeader.style.fontWeight = 'bold';
-                tempHeader.style.fontSize = '24px';
-                tempHeader.style.marginBottom = '2px';
-                tempHeader.textContent = 'Сводка по расходам';
-
-               
-                const tempPeriod = document.createElement('div');
-                tempPeriod.style.textAlign = 'center';
-                tempPeriod.style.fontWeight = 'normal';
-                tempPeriod.style.fontSize = '16px';
-                tempPeriod.style.marginBottom = '2px';
-                tempPeriod.textContent = 'Период: ' + document.getElementById('periodLabel').textContent;
-
-                
-                const categories = dataSets[currentGroup].categories
-                    .filter(c => c.type === currentType)
-                    .map(c => c.name)
-                    .join(', ');
-                const tempCats = document.createElement('div');
-                tempCats.style.textAlign = 'center';
-                tempCats.style.fontWeight = 'normal';
-                tempCats.style.fontSize = '14px';
-                tempCats.style.marginBottom = '14px';
-                tempCats.style.wordBreak = 'break-word';
-                tempCats.textContent = 'Категории: ' + categories;
-
-                
-                chartBlock.insertBefore(tempHeader, chartBlock.firstChild);
-                chartBlock.insertBefore(tempPeriod, chartBlock.children[1]);
-                chartBlock.insertBefore(tempCats, chartBlock.children[2]);
-
-               
-                html2canvas(chartBlock, {backgroundColor: '#fff'}).then(canvas => {
-                    
-                    tempHeader.remove();
-                    tempPeriod.remove();
-                    tempCats.remove();
-
-                    
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdfWidth = Math.max(canvas.width, 600);
-                    const pdfHeight = Math.max(canvas.height, 400);
-                    const pdf = new window.jspdf.jsPDF({
-                        orientation: 'landscape',
-                        unit: 'px',
-                        format: [pdfWidth, pdfHeight]
-                    });
-                    const marginX = (pdfWidth - canvas.width) / 2;
-                    const marginY = (pdfHeight - canvas.height) / 2;
-                    pdf.addImage(imgData, 'PNG', marginX, marginY, canvas.width, canvas.height);
-                    pdf.save('diagram.pdf');
+            // Экспорт в PDF
+            document.getElementById('exportPdfBtn').addEventListener('click', function() {
+                const canvas = document.getElementById('budgetChart');
+                const imgData = canvas.toDataURL('image/png');
+                const a4Width = 1122;
+                const a4Height = 793;
+                const margin = 30;
+                // Диаграмма занимает 50% высоты листа
+                let imgHeight = a4Height * 0.5;
+                let imgWidth = imgHeight * (canvas.width / canvas.height);
+                if (imgWidth > a4Width - margin * 2) {
+                    imgWidth = a4Width - margin * 2;
+                    imgHeight = imgWidth * (canvas.height / canvas.width);
+                }
+                const imgX = (a4Width - imgWidth) / 2;
+                const imgY = margin;
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [a4Width, a4Height]
                 });
+                pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth, imgHeight);
+                // Легенда: цветной круг + сумма
+                const legendY = imgY + imgHeight + 40;
+                const legendX = margin + 10;
+                const legendLineHeight = 38;
+                const circleSize = 22;
+                const categories = dataSets[currentGroup].categories.filter(c => c.type === currentType);
+                let legendI = 0;
+                categories.forEach(cat => {
+                    // Цветной круг
+                    pdf.setFillColor(cat.color || '#888');
+                    pdf.circle(legendX + circleSize / 2, legendY + legendI * legendLineHeight + circleSize / 2, circleSize / 2, 'F');
+                    // Сумма
+                    let sum = 0;
+                    (dataSets[currentGroup].history[currentType][currentPeriod] || []).forEach(day => {
+                        (day.items || []).forEach(item => {
+                            if (item.cat === cat.name) sum += item.sum;
+                        });
+                    });
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(18);
+                    pdf.text(sum ? (sum.toLocaleString('ru-RU') + ' rub') : '', legendX + circleSize + 18, legendY + legendI * legendLineHeight + circleSize - 6);
+                    legendI++;
+                });
+                pdf.save('diagram.pdf');
+                bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+            });
+
+            // Экспорт в Excel
+            document.getElementById('exportExcelBtn').addEventListener('click', function() {
+                const wb = XLSX.utils.book_new();
+                // Лист с категориями
+                const categoriesData = dataSets[currentGroup].categories
+                    .filter(c => c.type === currentType)
+                    .map(cat => {
+                        let sum = 0;
+                        (dataSets[currentGroup].history[currentType][currentPeriod] || []).forEach(day => {
+                            (day.items || []).forEach(item => {
+                                if (item.cat === cat.name) sum += item.sum;
+                            });
+                        });
+                        return {
+                            'Категория': cat.name,
+                            'Сумма': sum,
+                            'Тип': cat.type === 'expense' ? 'Расход' : 'Доход',
+                            'Лимит': cat.limit || ''
+                        };
+                    });
+                const wsCategories = XLSX.utils.json_to_sheet(categoriesData);
+                XLSX.utils.book_append_sheet(wb, wsCategories, "Категории");
+                // Лист с месячной статистикой
+                const monthlyData = [];
+                const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+                dataSets[currentGroup].categories
+                    .filter(c => c.type === currentType)
+                    .forEach(cat => {
+                        const row = { 'Категория': cat.name };
+                        months.forEach((month, idx) => {
+                            let sum = 0;
+                            (dataSets[currentGroup].history[currentType]['month'] || []).forEach(day => {
+                                const d = new Date(day.date);
+                                if (d.getMonth() === idx) {
+                                    (day.items || []).forEach(item => {
+                                        if (item.cat === cat.name) sum += item.sum;
+                                    });
+                                }
+                            });
+                            row[month] = sum;
+                        });
+                        monthlyData.push(row);
+                    });
+                const wsMonthly = XLSX.utils.json_to_sheet(monthlyData);
+                XLSX.utils.book_append_sheet(wb, wsMonthly, "Месячная статистика");
+                // Лист с транзакциями
+                const transactionsData = [];
+                (dataSets[currentGroup].history[currentType][currentPeriod] || []).forEach(day => {
+                    day.items.forEach(item => {
+                        transactionsData.push({
+                            'Дата': formatDate(day.date),
+                            'Категория': item.cat,
+                            'Сумма': item.sum,
+                            'Комментарий': item.sub || ''
+                        });
+                    });
+                });
+                const wsTransactions = XLSX.utils.json_to_sheet(transactionsData);
+                XLSX.utils.book_append_sheet(wb, wsTransactions, "Транзакции");
+                XLSX.writeFile(wb, 'финансовая_отчетность.xlsx');
+                // Закрыть модалку после экспорта
+                bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
             });
 
             
             function checkBudgetLimit(catName) {
-                
                 const cat = dataSets[currentGroup].categories.find(c => c.name === catName);
                 if (!cat || !cat.limit) return;
-
                 const now = new Date();
                 const month = now.getMonth();
                 const year = now.getFullYear();
@@ -1764,12 +1847,83 @@
                         });
                     }
                 });
-
                 if (spent > Number(cat.limit)) {
-                    alert(`Внимание! Превышен бюджет по категории "${catName}" (${spent} ₽ из ${cat.limit} ₽)`);
+                    // Проверяем, было ли уже уведомление в этом месяце по этой категории
+                    let notifs = getLimitNotifications();
+                    const notifKey = `${catName}_${month}_${year}`;
+                    const already = notifs.some(n => n.key === notifKey);
+                    if (!already) {
+                        addLimitNotification(`Превышен бюджет по категории "${catName}" (${spent.toLocaleString('ru-RU')} rub из ${Number(cat.limit).toLocaleString('ru-RU')} rub)`, notifKey);
+                    }
                 }
             }
-            
+            // Обновить addLimitNotification для поддержки ключа
+            function addLimitNotification(text, key) {
+                let notifs = JSON.parse(localStorage.getItem('limitNotifications') || '[]');
+                notifs.push({ text, time: new Date().toISOString(), read: false, key });
+                localStorage.setItem('limitNotifications', JSON.stringify(notifs));
+                updateBellIcon();
+            }
+            function getLimitNotifications() {
+                return JSON.parse(localStorage.getItem('limitNotifications') || '[]');
+            }
+            function markLimitNotificationsRead() {
+                let notifs = getLimitNotifications();
+                notifs.forEach(n => n.read = true);
+                localStorage.setItem('limitNotifications', JSON.stringify(notifs));
+                updateBellIcon();
+            }
+            function updateBellIcon() {
+                const notifs = getLimitNotifications();
+                const hasUnread = notifs.some(n => !n.read);
+                document.querySelectorAll('.bi-bell').forEach(bell => {
+                    if (hasUnread) {
+                        bell.classList.add('text-primary');
+                    } else {
+                        bell.classList.remove('text-primary');
+                    }
+                });
+            }
+            // Показать уведомления в модалке
+            notificationsModal.addEventListener('show.bs.modal', function() {
+                const body = notificationsModal.querySelector('.modal-body');
+                const notifs = getLimitNotifications();
+                if (!notifs.length) {
+                    body.innerHTML = '<div class="w-100 text-center text-muted fs-4">здесь пока пусто</div>';
+                } else {
+                    body.innerHTML = '<ul class="list-unstyled w-100">' + notifs.map(n =>
+                        `<li class='mb-3'><span class='fw-bold text-danger'>${n.text}</span><br><span class='text-muted small'>${new Date(n.time).toLocaleString('ru-RU')}</span></li>`
+                    ).join('') + '</ul>' +
+                    '<div class="text-center mt-3"><button class="btn btn-outline-secondary btn-sm" id="clearLimitNotifsBtn">Очистить</button></div>';
+                }
+                markLimitNotificationsRead();
+            });
+
+            // Обработчик кнопки очистки уведомлений
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'clearLimitNotifsBtn') {
+                    localStorage.removeItem('limitNotifications');
+                    const body = notificationsModal.querySelector('.modal-body');
+                    body.innerHTML = '<div class="w-100 text-center text-muted fs-4">здесь пока пусто</div>';
+                    updateBellIcon();
+                }
+            });
+
+            // Обработчик закрытия модального окна
+            document.querySelectorAll('.bi-bell').forEach(bell => {
+                bell.addEventListener('click', function() {
+                    const modal = new bootstrap.Modal(notificationsModal);
+                    modal.show();
+                });
+            });
+
+            // Обработчик кнопки закрытия
+            notificationsModal.querySelector('.btn-close').addEventListener('click', function() {
+                const modal = bootstrap.Modal.getInstance(notificationsModal);
+                if (modal) {
+                    modal.hide();
+                }
+            });
         });
     </script>
 </body>

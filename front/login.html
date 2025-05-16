@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Smart Money</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/regstyle.css" rel="stylesheet">
+</head>
+<body class="bg-cover">
+    <div class="container d-flex min-vh-100 align-items-center justify-content-center p-3">
+        <div class="registration-form bg-white rounded-3 shadow p-4 p-md-5 w-100" style="max-width: 500px">
+            <h1 class="text-center mb-4 fw-bold">Вход</h1>
+            
+            <form onsubmit="loginUser(event)">
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-medium">Email</label>
+                    <input type="email" class="form-control py-2" id="email" placeholder="Введите ваш email" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-medium">Пароль</label>
+                    <input type="password" class="form-control py-2" id="password" placeholder="Введите пароль" required>
+                </div>
+                
+                <div class="mb-4 text-center">
+                    <a href="register.html" class="text-muted text-decoration-none small">Зарегистрироваться</a>
+                </div>
+                
+                <hr class="my-4">
+                
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-medium">
+                    Войти
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast-уведомление -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
+      <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            Вход выполнен успешно!
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+    function loginUser(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.user && data.token) {
+                // Сохраняем токен и ID пользователя
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userId', data.user.id);
+                
+                var toast = new bootstrap.Toast(document.getElementById('successToast'));
+                toast.show();
+                setTimeout(() => window.location.href = 'finance.html', 2000);
+            } else if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Ошибка входа');
+            }
+        })
+        .catch(() => alert('Ошибка соединения с сервером'));
+    }
+    </script>
+</body>
+</html> 
